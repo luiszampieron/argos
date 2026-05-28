@@ -1,0 +1,23 @@
+from typing import Protocol
+
+from domain.entities import Task, Team
+from domain.enums import TaskStatus
+
+
+class TeamRepository(Protocol):
+    def add(self, team: Team) -> Team: ...
+
+    def get(self, team_id: int) -> Team | None: ...
+
+    def list_all(self) -> list[Team]: ...
+
+
+class TaskRepository(Protocol):
+    def add(self, task: Task) -> Task: ...
+
+    def get(self, task_id: int) -> Task | None: ...
+
+    def list_by_team(self, team_id: int) -> list[Task]: ...
+
+    def update_status(self, task_id: int,
+                      status: TaskStatus) -> Task | None: ...
