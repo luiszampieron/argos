@@ -1,96 +1,155 @@
 # Argos API
 
-Core de um sistema de controle de tarefas para equipes, construído com FastAPI, SQLite e organização em DDD.
+Backend para controle de tarefas de equipe com FastAPI, SQLite e organizacao em DDD.
+
+## Objetivo
+
+Este repositorio implementa a base de uma API para:
+
+- cadastro e autenticacao de membros
+- cadastro e consulta de equipes
+- cadastro e acompanhamento de tarefas
+- controle de status das tarefas
 
 ## Stack
 
-- Python 3.11 a 3.13
+- Python 3.11 ate 3.13
 - FastAPI
 - SQLite
-- uv (gerenciamento de ambiente e dependências)
+- Alembic (migrations)
+- uv (ambiente e dependencias)
 
-## Arquitetura (DDD)
+## Estrutura do projeto
 
-A estrutura principal está organizada em camadas:
-
-- `src/domain`: regras de domínio, entidades, enums e contratos de repositório
-- `src/application`: casos de uso/serviços de aplicação
-- `src/infrastructure`: persistência SQLite e implementação dos repositórios
-- `src/interfaces/api`: schemas e rotas HTTP
-- `src/main.py`: composição da aplicação FastAPI
+- src/domain: entidades, enums e contratos de repositorio
+- src/application: servicos e regras de negocio
+- src/infrastructure: persistencia SQLite e implementacoes de repositorio
+- src/interfaces/api: contratos HTTP (schemas) e rotas
+- src/main.py: bootstrap da aplicacao
+- alembic: configuracao e historico de migrations
 
 ## Requisitos
 
-- `uv` instalado
-- Python compatível (`>=3.11,<3.14`)
+- uv instalado
+- Python compativel com o projeto
 
-## Como rodar
+## Setup local
 
-Na raiz do projeto:
+1. Instalar dependencias da aplicacao
 
-```bash
 uv sync
-```
 
-Suba a API:
+2. Instalar dependencias de desenvolvimento (inclui Alembic)
 
-```bash
+uv sync --group dev
+
+3. Criar o arquivo de ambiente a partir do template
+
+cp .env.example .env
+
+4. Carregar variaveis do .env no shell atual
+
+set -a
+source .env
+set +a
+
+5. Aplicar migrations
+
+uv run alembic upgrade head
+
+## Executar a API
+
 uv run uvicorn main:app --app-dir src --host 127.0.0.1 --port 8001 --reload
-```
 
-Observacao:
+Notas:
 
-- O app deve ser iniciado com `--app-dir src`, pois os imports estao relativos ao diretorio `src`.
-- Se preferir usar a porta 8000, troque `--port 8001` por `--port 8000`.
+- use --app-dir src para resolucao correta dos imports
+- ajuste host e porta conforme sua necessidade
+- docs interativa: http://127.0.0.1:8001/docs
 
-## Endpoints principais
+## Variaveis de ambiente
 
-- `GET /health`
-- `POST /api/teams`
-- `GET /api/teams`
-- `POST /api/tasks`
-- `GET /api/teams/{team_id}/tasks`
-- `PATCH /api/tasks/{task_id}/status`
+Definidas em .env.example:
 
-Swagger UI:
+- APP_ENV: ambiente de execucao (exemplo: development)
+- ARGOS_DB_PATH: caminho do banco SQLite
+- ARGOS_JWT_SECRET: segredo para assinatura dos tokens
+- ARGOS_JWT_ALGORITHM: algoritmo JWT (padrao HS256)
+- ARGOS_TOKEN_EXP_MINUTES: expiracao do token em minutos
+- ARGOS_API_HOST: host sugerido para executar a API
+- ARGOS_API_PORT: porta sugerida para executar a API
 
-- `http://127.0.0.1:8001/docs`
+## Endpoints
 
-## Exemplos rapidos
+Publicos:
 
-Criar equipe:
+- GET /health
+- POST /api/auth/register
+- POST /api/auth/login
 
-```bash
-curl -X POST "http://127.0.0.1:8001/api/teams" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Backend Team"}'
-```
+Protegidos por Bearer Token:
 
-Criar tarefa:
+- GET /api/auth/me
+- POST /api/teams
+- GET /api/teams
+- POST /api/tasks
+- GET /api/teams/{team_id}/tasks
+- PATCH /api/tasks/{task_id}/status
 
-```bash
-curl -X POST "http://127.0.0.1:8001/api/tasks" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "team_id": 1,
-    "title": "Criar endpoint de tarefas",
-    "description": "Implementar listagem por equipe",
-    "assignee": "Luis"
-  }'
-```
+## Fluxo rapido de autenticacao
 
-Atualizar status da tarefa:
+1. Registrar membro
 
-```bash
-curl -X PATCH "http://127.0.0.1:8001/api/tasks/1/status" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"in_progress"}'
-```
+curl -X POST "http://127.0.0.1:8001/api/auth/register" \
+ -H "Content-Type: application/json" \
+ -d '{"name":"Luis","email":"luis@example.com","cargo":"Backend Dev","password":"Senha@123"}'
 
-## Banco de dados
+2. Fazer login e receber access_token
 
-O banco SQLite e criado automaticamente em:
+curl -X POST "http://127.0.0.1:8001/api/auth/login" \
+ -H "Content-Type: application/json" \
+ -d '{"email":"luis@example.com","password":"Senha@123"}'
 
-- `./data/argos.db`
+3. Usar token no header Authorization
 
-Pode alterar o caminho com a variavel de ambiente `ARGOS_DB_PATH`.
+Authorization: Bearer SEU_TOKEN
+
+## Regras atuais de senha
+
+- minimo de 8 caracteres
+- ao menos 1 letra maiuscula
+- ao menos 1 letra minuscula
+- ao menos 1 numero
+- ao menos 1 caractere especial
+
+## Migrations
+
+Comandos principais:
+
+- aplicar pendencias: uv run alembic upgrade head
+- criar migration: uv run alembic revision -m "descricao"
+- ver revisao atual: uv run alembic current
+- voltar uma revisao: uv run alembic downgrade -1
+
+Importante:
+
+- o startup da API nao cria tabelas automaticamente
+- rode migrations antes de iniciar a API
+
+## Estado funcional atual
+
+O projeto esta operacional para autenticacao, equipes e tarefas basicas.
+
+Itens que ainda podem ser evoluidos para aderencia total ao enunciado da atividade:
+
+- prioridade da tarefa (baixa/media/alta)
+- responsavel obrigatorio por tarefa
+- buscar tarefa por id
+- atualizar responsavel da tarefa
+- filtrar tarefas por responsavel
+- filtrar tarefas por status
+
+## Documentacao complementar
+
+- docs/API_REFERENCE.md
+- docs/DEVELOPMENT.md

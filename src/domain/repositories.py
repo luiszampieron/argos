@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from domain.entities import Task, Team
+from domain.entities import Member, Task, Team
 from domain.enums import TaskStatus
 
 
@@ -21,3 +21,11 @@ class TaskRepository(Protocol):
 
     def update_status(self, task_id: int,
                       status: TaskStatus) -> Task | None: ...
+
+
+class MemberRepository(Protocol):
+    def add(self, member: Member) -> Member: ...
+
+    def get_by_id(self, member_id: int) -> Member | None: ...
+
+    def get_by_email(self, email: str) -> Member | None: ...

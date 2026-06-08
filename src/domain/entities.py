@@ -12,6 +12,16 @@ class Team:
 
 
 @dataclass(slots=True)
+class Member:
+    id: int | None
+    name: str
+    email: str
+    cargo: str
+    password_hash: str
+    created_at: datetime
+
+
+@dataclass(slots=True)
 class Task:
     id: int | None
     team_id: int

@@ -1,4 +1,4 @@
-from domain.entities import Task, Team
+from domain.entities import Member, Task, Team
 from domain.enums import TaskStatus
 from infrastructure.sqlite import SQLiteDatabase, from_iso, to_iso
 
@@ -143,4 +143,75 @@ def _to_task(row: object) -> Task | None:
         assignee=row["assignee"],
         created_at=from_iso(row["created_at"]),
         due_date=from_iso(row["due_date"]),
+    )
+
+
+class SQLiteMemberRepository:
+    def __init__(self, database: SQLiteDatabase) -> None:
+        self._database = database
+
+    def add(self, member: Member) -> Member:
+        with self._database.connection() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO members(name, email, cargo, password_hash, created_at)
+                VALUES(?, ?, ?, ?, ?)
+                """,
+                (
+                    member.name,
+                    member.email,
+                    member.cargo,
+                    member.password_hash,
+                    to_iso(member.created_at),
+                ),
+            )
+            member_id = int(cursor.lastrowid)
+
+        return Member(
+            id=member_id,
+            name=member.name,
+            email=member.email,
+            cargo=member.cargo,
+            password_hash=member.password_hash,
+            created_at=member.created_at,
+        )
+
+    def get_by_id(self, member_id: int) -> Member | None:
+        with self._database.connection() as conn:
+            row = conn.execute(
+                """
+                SELECT id, name, email, cargo, password_hash, created_at
+                FROM members WHERE id = ?
+                """,
+                (member_id,),
+            ).fetchone()
+        return _to_member(row)
+
+    def get_by_email(self, email: str) -> Member | None:
+        with self._database.connection() as conn:
+            row = conn.execute(
+                """
+                SELECT id, name, email, cargo, password_hash, created_at
+                FROM members WHERE email = ?
+                """,
+                (email,),
+            ).fetchone()
+        return _to_member(row)
+
+
+def _to_member(row: object) -> Member | None:
+    if row is None:
+        return None
+
+    created_at = from_iso(row["created_at"])
+    if created_at is None:
+        return None
+
+    return Member(
+        id=row["id"],
+        name=row["name"],
+        email=row["email"],
+        cargo=row["cargo"],
+        password_hash=row["password_hash"],
+        created_at=created_at,
     )
