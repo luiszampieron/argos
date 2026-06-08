@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from backend.src.application.exceptions import (
+from src.application.exceptions import (
     InvalidCredentialsError,
+    InvalidTaskOperationError,
     InvalidTokenError,
     MemberAlreadyExistsError,
     MemberNotFoundError,
@@ -10,12 +11,13 @@ from backend.src.application.exceptions import (
     TeamNotFoundError,
     WeakPasswordError,
 )
-from backend.src.application.services import AuthService, TaskManagementService
-from backend.src.domain.entities import Member
-from backend.src.interfaces.api.schemas import (
+from src.application.services import AuthService, TaskManagementService
+from src.domain.entities import Member
+from src.interfaces.api.schemas import (
     MemberCreateRequest,
     MemberLoginRequest,
     MemberResponse,
+    TaskAssigneeUpdateRequest,
     TaskCreateRequest,
     TaskResponse,
     TaskStatusUpdateRequest,
@@ -100,13 +102,23 @@ def build_router(task_service: TaskManagementService, auth_service: AuthService)
                 team_id=payload.team_id,
                 title=payload.title,
                 description=payload.description,
-                assignee=payload.assignee,
+                priority=payload.priority,
+                assignee_id=payload.assignee_id,
                 due_date=payload.due_date,
             )
         except TeamNotFoundError as exc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
+        return TaskResponse.model_validate(task, from_attributes=True)
+
+    @router.get("/tasks/{task_id}", response_model=TaskResponse)
+    def get_task(task_id: int, _: Member = Depends(current_member)) -> TaskResponse:
+        try:
+            task = task_service.get_task(task_id)
+        except TaskNotFoundError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return TaskResponse.model_validate(task, from_attributes=True)
 
     @router.get("/teams/{team_id}/tasks", response_model=list[TaskResponse])
@@ -119,6 +131,25 @@ def build_router(task_service: TaskManagementService, auth_service: AuthService)
 
         return [TaskResponse.model_validate(item, from_attributes=True) for item in tasks]
 
+    @router.patch("/tasks/{task_id}/assignee", response_model=TaskResponse)
+    def update_task_assignee(
+        task_id: int,
+        payload: TaskAssigneeUpdateRequest,
+        _: Member = Depends(current_member),
+    ) -> TaskResponse:
+        try:
+            task = task_service.update_task_assignee(
+                task_id, payload.assignee_id)
+        except TaskNotFoundError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        return TaskResponse.model_validate(task, from_attributes=True)
+
+    @router.get("/members", response_model=list[MemberResponse])
+    def list_members(_: Member = Depends(current_member)) -> list[MemberResponse]:
+        members = task_service.list_members()
+        return [MemberResponse.model_validate(m, from_attributes=True) for m in members]
+
     @router.patch("/tasks/{task_id}/status", response_model=TaskResponse)
     def update_task_status(
         task_id: int,
@@ -130,6 +161,9 @@ def build_router(task_service: TaskManagementService, auth_service: AuthService)
         except TaskNotFoundError as exc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        except InvalidTaskOperationError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
         return TaskResponse.model_validate(task, from_attributes=True)
 

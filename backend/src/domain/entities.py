@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from backend.src.domain.enums import TaskStatus
+from src.domain.enums import TaskPriority, TaskStatus
 
 
 @dataclass(slots=True)
@@ -28,7 +28,10 @@ class Task:
     title: str
     description: str | None
     status: TaskStatus
-    assignee: str | None
+    priority: TaskPriority
+    assignee_id: int | None
+    # Populated by infrastructure JOIN — not persisted directly.
+    assignee_name: str | None
     created_at: datetime
     due_date: datetime | None
 
@@ -38,7 +41,8 @@ class Task:
         team_id: int,
         title: str,
         description: str | None = None,
-        assignee: str | None = None,
+        priority: TaskPriority = TaskPriority.MEDIUM,
+        assignee_id: int | None = None,
         due_date: datetime | None = None,
     ) -> "Task":
         return cls(
@@ -47,7 +51,9 @@ class Task:
             title=title,
             description=description,
             status=TaskStatus.TODO,
-            assignee=assignee,
+            priority=priority,
+            assignee_id=assignee_id,
+            assignee_name=None,
             created_at=datetime.now(UTC),
             due_date=due_date,
         )

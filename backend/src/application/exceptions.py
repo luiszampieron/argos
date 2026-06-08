@@ -6,6 +6,10 @@ class TaskNotFoundError(Exception):
     pass
 
 
+class InvalidTaskOperationError(Exception):
+    pass
+
+
 class MemberAlreadyExistsError(Exception):
     pass
 

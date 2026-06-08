@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from backend.src.domain.enums import TaskStatus
+from src.domain.enums import TaskPriority, TaskStatus
 
 
 class TeamCreateRequest(BaseModel):
@@ -19,12 +19,24 @@ class TaskCreateRequest(BaseModel):
     team_id: int
     title: str = Field(min_length=2, max_length=200)
     description: str | None = None
-    assignee: str | None = Field(default=None, max_length=120)
-    due_date: datetime | None = None
+    priority: TaskPriority = TaskPriority.MEDIUM
+    assignee_id: int  # required — every task must have an assignee
+    due_date: datetime
+
+    @field_validator("due_date")
+    @classmethod
+    def due_date_must_be_future(cls, v: datetime) -> datetime:
+        if v <= datetime.now(UTC):
+            raise ValueError("O prazo deve ser uma data futura")
+        return v
 
 
 class TaskStatusUpdateRequest(BaseModel):
     status: TaskStatus
+
+
+class TaskAssigneeUpdateRequest(BaseModel):
+    assignee_id: int  # required — removing assignee is not allowed
 
 
 class TaskResponse(BaseModel):
@@ -33,7 +45,9 @@ class TaskResponse(BaseModel):
     title: str
     description: str | None
     status: TaskStatus
-    assignee: str | None
+    priority: TaskPriority
+    assignee_id: int | None
+    assignee_name: str | None
     created_at: datetime
     due_date: datetime | None
 

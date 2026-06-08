@@ -1,15 +1,16 @@
 import os
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from backend.src.application.services import AuthService, TaskManagementService
-from backend.src.infrastructure.sqlite import SQLiteDatabase
-from backend.src.infrastructure.sqlite_repositories import (
+from src.application.services import AuthService, TaskManagementService
+from src.infrastructure.sqlite import SQLiteDatabase
+from src.infrastructure.sqlite_repositories import (
     SQLiteMemberRepository,
     SQLiteTaskRepository,
     SQLiteTeamRepository,
 )
-from backend.src.interfaces.api.routes import build_router
+from src.interfaces.api.routes import build_router
 
 
 def create_app() -> FastAPI:
@@ -24,7 +25,10 @@ def create_app() -> FastAPI:
     member_repo = SQLiteMemberRepository(database)
 
     task_service = TaskManagementService(
-        team_repository=team_repo, task_repository=task_repo)
+        team_repository=team_repo,
+        task_repository=task_repo,
+        member_repository=member_repo,
+    )
     auth_service = AuthService(
         member_repository=member_repo,
         jwt_secret=jwt_secret,
@@ -33,6 +37,18 @@ def create_app() -> FastAPI:
     )
 
     app = FastAPI(title="Argos Task Control API", version="0.1.0")
+
+    allowed_origins = os.getenv(
+        "ARGOS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+    ).split(",")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     app.include_router(build_router(task_service, auth_service))
 
     @app.get("/health", tags=["system"])

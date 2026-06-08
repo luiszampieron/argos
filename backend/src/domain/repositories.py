@@ -1,7 +1,7 @@
 from typing import Protocol
 
-from backend.src.domain.entities import Member, Task, Team
-from backend.src.domain.enums import TaskStatus
+from src.domain.entities import Member, Task, Team
+from src.domain.enums import TaskStatus
 
 
 class TeamRepository(Protocol):
@@ -22,6 +22,9 @@ class TaskRepository(Protocol):
     def update_status(self, task_id: int,
                       status: TaskStatus) -> Task | None: ...
 
+    def update_assignee(self, task_id: int,
+                        assignee_id: int | None) -> Task | None: ...
+
 
 class MemberRepository(Protocol):
     def add(self, member: Member) -> Member: ...
@@ -29,3 +32,5 @@ class MemberRepository(Protocol):
     def get_by_id(self, member_id: int) -> Member | None: ...
 
     def get_by_email(self, email: str) -> Member | None: ...
+
+    def list_all(self) -> list[Member]: ...

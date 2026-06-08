@@ -6,8 +6,9 @@ import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
 
-from backend.src.application.exceptions import (
+from src.application.exceptions import (
     InvalidCredentialsError,
+    InvalidTaskOperationError,
     InvalidTokenError,
     MemberAlreadyExistsError,
     MemberNotFoundError,
@@ -15,15 +16,21 @@ from backend.src.application.exceptions import (
     TeamNotFoundError,
     WeakPasswordError,
 )
-from backend.src.domain.entities import Member, Task, Team
-from backend.src.domain.enums import TaskStatus
-from backend.src.domain.repositories import MemberRepository, TaskRepository, TeamRepository
+from src.domain.entities import Member, Task, Team
+from src.domain.enums import TaskPriority, TaskStatus
+from src.domain.repositories import MemberRepository, TaskRepository, TeamRepository
 
 
 class TaskManagementService:
-    def __init__(self, team_repository: TeamRepository, task_repository: TaskRepository) -> None:
+    def __init__(
+        self,
+        team_repository: TeamRepository,
+        task_repository: TaskRepository,
+        member_repository: MemberRepository,
+    ) -> None:
         self._team_repository = team_repository
         self._task_repository = task_repository
+        self._member_repository = member_repository
 
     def create_team(self, name: str) -> Team:
         team = Team(id=None, name=name, created_at=datetime.now(UTC))
@@ -37,7 +44,8 @@ class TaskManagementService:
         team_id: int,
         title: str,
         description: str | None = None,
-        assignee: str | None = None,
+        priority: TaskPriority = TaskPriority.MEDIUM,
+        assignee_id: int | None = None,
         due_date: datetime | None = None,
     ) -> Task:
         if self._team_repository.get(team_id) is None:
@@ -47,7 +55,8 @@ class TaskManagementService:
             team_id=team_id,
             title=title,
             description=description,
-            assignee=assignee,
+            priority=priority,
+            assignee_id=assignee_id,
             due_date=due_date,
         )
         return self._task_repository.add(task)
@@ -57,11 +66,35 @@ class TaskManagementService:
             raise TeamNotFoundError(f"Team {team_id} not found")
         return self._task_repository.list_by_team(team_id)
 
+    def get_task(self, task_id: int) -> Task:
+        task = self._task_repository.get(task_id)
+        if task is None:
+            raise TaskNotFoundError(f"Task {task_id} not found")
+        return task
+
     def update_task_status(self, task_id: int, status: TaskStatus) -> Task:
+        task = self._task_repository.get(task_id)
+        if task is None:
+            raise TaskNotFoundError(f"Task {task_id} not found")
+        if status == TaskStatus.DONE and task.assignee_id is None:
+            raise InvalidTaskOperationError(
+                "Não é possível concluir uma tarefa sem responsável"
+            )
         updated = self._task_repository.update_status(task_id, status)
         if updated is None:
             raise TaskNotFoundError(f"Task {task_id} not found")
         return updated
+
+    def update_task_assignee(self, task_id: int, assignee_id: int) -> Task:
+        if self._task_repository.get(task_id) is None:
+            raise TaskNotFoundError(f"Task {task_id} not found")
+        updated = self._task_repository.update_assignee(task_id, assignee_id)
+        if updated is None:
+            raise TaskNotFoundError(f"Task {task_id} not found")
+        return updated
+
+    def list_members(self) -> list[Member]:
+        return self._member_repository.list_all()
 
 
 class AuthService:
