@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from domain.enums import TaskStatus
+from backend.src.domain.enums import TaskStatus
 
 
 @dataclass(slots=True)

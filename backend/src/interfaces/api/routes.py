@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from application.exceptions import (
+from backend.src.application.exceptions import (
     InvalidCredentialsError,
     InvalidTokenError,
     MemberAlreadyExistsError,
@@ -10,9 +10,9 @@ from application.exceptions import (
     TeamNotFoundError,
     WeakPasswordError,
 )
-from application.services import AuthService, TaskManagementService
-from domain.entities import Member
-from interfaces.api.schemas import (
+from backend.src.application.services import AuthService, TaskManagementService
+from backend.src.domain.entities import Member
+from backend.src.interfaces.api.schemas import (
     MemberCreateRequest,
     MemberLoginRequest,
     MemberResponse,

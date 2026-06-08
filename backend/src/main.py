@@ -2,14 +2,14 @@ import os
 
 from fastapi import FastAPI
 
-from application.services import AuthService, TaskManagementService
-from infrastructure.sqlite import SQLiteDatabase
-from infrastructure.sqlite_repositories import (
+from backend.src.application.services import AuthService, TaskManagementService
+from backend.src.infrastructure.sqlite import SQLiteDatabase
+from backend.src.infrastructure.sqlite_repositories import (
     SQLiteMemberRepository,
     SQLiteTaskRepository,
     SQLiteTeamRepository,
 )
-from interfaces.api.routes import build_router
+from backend.src.interfaces.api.routes import build_router
 
 
 def create_app() -> FastAPI:

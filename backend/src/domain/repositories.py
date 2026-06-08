@@ -1,7 +1,7 @@
 from typing import Protocol
 
-from domain.entities import Member, Task, Team
-from domain.enums import TaskStatus
+from backend.src.domain.entities import Member, Task, Team
+from backend.src.domain.enums import TaskStatus
 
 
 class TeamRepository(Protocol):

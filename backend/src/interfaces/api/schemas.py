@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from domain.enums import TaskStatus
+from backend.src.domain.enums import TaskStatus
 
 
 class TeamCreateRequest(BaseModel):

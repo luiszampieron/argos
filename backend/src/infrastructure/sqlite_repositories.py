@@ -1,6 +1,6 @@
-from domain.entities import Member, Task, Team
-from domain.enums import TaskStatus
-from infrastructure.sqlite import SQLiteDatabase, from_iso, to_iso
+from backend.src.domain.entities import Member, Task, Team
+from backend.src.domain.enums import TaskStatus
+from backend.src.infrastructure.sqlite import SQLiteDatabase, from_iso, to_iso
 
 
 class SQLiteTeamRepository:

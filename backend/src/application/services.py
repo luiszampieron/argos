@@ -6,7 +6,7 @@ import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
 
-from application.exceptions import (
+from backend.src.application.exceptions import (
     InvalidCredentialsError,
     InvalidTokenError,
     MemberAlreadyExistsError,
@@ -15,9 +15,9 @@ from application.exceptions import (
     TeamNotFoundError,
     WeakPasswordError,
 )
-from domain.entities import Member, Task, Team
-from domain.enums import TaskStatus
-from domain.repositories import MemberRepository, TaskRepository, TeamRepository
+from backend.src.domain.entities import Member, Task, Team
+from backend.src.domain.enums import TaskStatus
+from backend.src.domain.repositories import MemberRepository, TaskRepository, TeamRepository
 
 
 class TaskManagementService:
