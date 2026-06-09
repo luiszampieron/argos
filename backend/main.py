@@ -13,6 +13,69 @@ from src.infrastructure.sqlite_repositories import (
 from src.interfaces.api.routes import build_router
 
 
+_OPENAPI_TAGS: list[dict] = [
+    {
+        "name": "auth",
+        "description": (
+            "Registro e autenticação de membros. "
+            "O token JWT retornado em `/auth/login` deve ser enviado como "
+            "`Authorization: Bearer <token>` em todas as demais rotas."
+        ),
+    },
+    {
+        "name": "teams",
+        "description": "Criação e listagem de equipes.",
+    },
+    {
+        "name": "tasks",
+        "description": (
+            "Gerenciamento do ciclo de vida das tarefas: criação, consulta, "
+            "atualização de status (`todo → in_progress → done / blocked`) "
+            "e reatribuição de responsável."
+        ),
+    },
+    {
+        "name": "members",
+        "description": "Consulta de membros cadastrados na plataforma.",
+    },
+    {
+        "name": "system",
+        "description": "Endpoints de infraestrutura/saúde da aplicação.",
+    },
+]
+
+_DESCRIPTION = """
+## Argos Task Control API
+
+API RESTful para gerenciamento de tarefas em equipe.
+
+### Fluxo básico
+
+1. **Registre** um membro em `POST /api/auth/register`.
+2. **Autentique-se** em `POST /api/auth/login` e obtenha o `access_token`.
+3. Envie o header `Authorization: Bearer <token>` em todas as demais requisições.
+4. Crie uma **equipe** (`POST /api/teams`) e depois crie **tarefas** (`POST /api/tasks`).
+5. Avance o status das tarefas com `PATCH /api/tasks/{id}/status`.
+
+### Transições de status permitidas
+
+| De | Para |
+|----|------|
+| `todo` | `in_progress`, `blocked` |
+| `in_progress` | `done`, `blocked` |
+| `blocked` | `in_progress` |
+
+### Autenticação
+
+Todas as rotas (exceto `/api/auth/register`, `/api/auth/login` e `/health`) exigem
+um token JWT no header:
+
+```
+Authorization: Bearer <token>
+```
+"""
+
+
 def create_app() -> FastAPI:
     db_path = os.getenv("ARGOS_DB_PATH", "./data/argos.db")
     jwt_secret = os.getenv("ARGOS_JWT_SECRET", "change-this-in-production")
@@ -36,7 +99,14 @@ def create_app() -> FastAPI:
         jwt_algorithm=jwt_algorithm,
     )
 
-    app = FastAPI(title="Argos Task Control API", version="0.1.0")
+    app = FastAPI(
+        title="Argos Task Control API",
+        version="0.1.0",
+        description=_DESCRIPTION,
+        openapi_tags=_OPENAPI_TAGS,
+        contact={"name": "Argos Dev Team"},
+        license_info={"name": "MIT"},
+    )
 
     allowed_origins = os.getenv(
         "ARGOS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"

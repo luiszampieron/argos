@@ -59,7 +59,7 @@ uv run alembic upgrade head
 
 ## Executar a API
 
-uv run uvicorn main:app --app-dir src --host 127.0.0.1 --port 8001 --reload
+uv run uvicorn main:app --host 127.0.0.1 --port 8001 --reload
 
 Notas:
 
